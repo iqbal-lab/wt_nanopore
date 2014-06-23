@@ -24,9 +24,9 @@ makeDir(opt.outdir)
 
 directory = opt.directory + "/*.fast5"
 fast5list =  glob.glob(directory)
-with open('complement.fq', 'w') as complementOutFile, \
-     open('template.fq', 'w') as templateOutFile, \
-     open('2d.fq', 'w') as twoDOutFile:
+with open('%s/complement.fq' % opt.outdir, 'w') as complementOutFile, \
+     open('%s/template.fq' % opt.outdir, 'w') as templateOutFile, \
+     open('%s/2d.fq' % opt.outdir, 'w') as twoDOutFile:
     for f in fast5list:
         fq =  fast5File(filepath=f)
         if fq.complement is not None:
