@@ -8,7 +8,7 @@ import logging
 from optparse import OptionParser
 parser = OptionParser()
 parser.description = """
-Converts an ONT fast5 file into fastq files saved to outdir/{template,complement,2d}"""
+Converts an ONT fast5 file into fastq files saved to outdir/{template,complement,2d}.fq"""
 parser.add_option("-d", "--dir", dest="directory",
                   help="path to ONT data/reads/downloads directory")
 parser.add_option("-o", "--out", dest="outdir",
