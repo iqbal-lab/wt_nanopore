@@ -4,10 +4,18 @@
 ## Must have maf-convert.py in PATH (it comes with the last install)
 
 ## USAGE : ./last2Sam.sh /path/to/lastal/output/file.txt
+
+
 if [ "$1" == "" ] || ["$1" == "-h"] || ["$1" == "-help" ] ; then
     echo "Usage: `basename $0` /path/to/lastal/output/file.txt"
     exit 0
 fi
+
+# if [ ! -x  "maf-convert.py"  ]; then
+# 	echo "Can't find maf-convert.py. Add it to your path (it should have come with the last install)."
+# 	exit 0
+# fi
+
 
 f=$1
 b=$(basename $f)

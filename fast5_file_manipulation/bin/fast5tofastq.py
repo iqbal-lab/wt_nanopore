@@ -16,11 +16,7 @@ parser.add_option("-o", "--out", dest="outdir",
 (opt, args) = parser.parse_args()
 if opt.directory is None:
     parser.print_help()
-## Make the output directories
-def makeDir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-makeDir(opt.outdir)
+
 
 directory = opt.directory + "/*.fast5"
 fast5list =  glob.glob(directory)

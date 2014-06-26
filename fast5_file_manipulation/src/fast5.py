@@ -31,7 +31,7 @@ class fast5File(object):
             # logging.warning("Found Fasta File in %s : %s" % (self.filepath,datasetname ))
             fq = hdf[datasetname][()]
             hdf.close()
-            return fq[:-1]
+            return fq[:-1] + "\n"
         except KeyError,e:
             # logging.warning("No Fasta File in %s : %s" % (self.filepath,datasetname ))
             hdf.close()
