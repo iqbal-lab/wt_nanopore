@@ -1,4 +1,5 @@
 banyan-venv/
+*.pyc
 *~
 *.fq
 *.DS_Store
