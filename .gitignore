@@ -1,4 +1,5 @@
 banyan-venv/
+*.pdf
 *.Rhistory
 venv
 *.pyc
