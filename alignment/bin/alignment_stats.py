@@ -68,7 +68,7 @@ with open(alignOutfile,'w') as outali:
                 H += i 
             else:
                 pass
-        row = [read.qname,read.is_unmapped,read.pos,readLength,read.alen,M,I,D,S,H]
+        row = [read.qname,int(read.is_unmapped),read.pos,readLength,read.alen,M,I,D,S,H]
         writer.writerow(row)
 
 

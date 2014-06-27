@@ -1,5 +1,6 @@
+#! /usr/bin/env Rscript
 ## Script to take the output of alignment_stats and plot coverage across the reference
-
+install.packages('ggplot2')
 library(ggplot2)
 
 data <- read.table("~/Dropbox/Nanopore/processed_data/Burn_in/m1/stats/m1_lambda_burn_in_coverage.dat",header=T)
