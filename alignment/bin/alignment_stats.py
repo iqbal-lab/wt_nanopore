@@ -23,10 +23,10 @@ def makeDir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 def makeOutFileName(infile,end):
-	outdir = "/".join(infile.split("/")[:-2]) + "/stats/"
-	makeDir(outdir)
-	outname = infile.split("/")[-1].split(".")[0] +"_"+ end
-	return outdir + outname
+    outdir = "/".join(infile.split("/")[:-2]) + "/stats/"
+    makeDir(outdir)
+    outname = infile.split("/")[-1].split(".")[0] +"_"+ end
+    return outdir + outname
 
 
 samfile = pysam.Samfile( opt.file )
@@ -34,19 +34,41 @@ samfile = pysam.Samfile( opt.file )
 covOutfile = makeOutFileName(opt.file,"coverage.dat")
 print "Calculating coverage stats. Outputting to %s " % covOutfile
 with open(covOutfile,'w') as outcov:
-	writer = csv.writer(outcov,delimiter="\t")
-	writer.writerow(["pos","cov"])
-	for pileupcolumn in samfile.pileup():
-		row = [pileupcolumn.pos , pileupcolumn.n]
-		writer.writerow(row)
+    writer = csv.writer(outcov,delimiter="\t")
+    writer.writerow(["pos","cov"])
+    for pileupcolumn in samfile.pileup():
+        row = [pileupcolumn.pos , pileupcolumn.n]
+        writer.writerow(row)
 
 
+alignOutfile = makeOutFileName(opt.file,"alignment.dat")
+print "Calculating alignment stats. Outputting to %s " % alignOutfile
+with open(alignOutfile,'w') as outali:
+    writer = csv.writer(outali,delimiter="\t")
+    writer.writerow(["id","is_unmapped","pos","len","aligned_length","M","I","D","S","H"])
+    for read in samfile.fetch():
+        readLength = 0
+        M,I,D,S,H = (0,0,0,0,0)
+        for t,i in read.cigar:
+            readLength += i
+            if t == 0:
+                ## Match or mismatch
+                M += i 
+            elif t == 1:                
+                ## Insertion to the reference
+                I += i
+            elif t == 2:
+                ## Deletion from the reference
+                D += i 
+            elif t == 4:
+                ##  soft clipping (clipped sequences present in SEQ)
+                S += i 
+            elif t == 5:
+                ##  hard clipping (clipped sequences NOT present in SEQ)
+                H += i 
+            else:
+                pass
+        row = [read.qname,read.is_unmapped,read.pos,readLength,read.alen,M,I,D,S,H]
+        writer.writerow(row)
 
-# for read in samfile.fetch():
-# 	readLength = sum([j for i,j in read.cigar])
-# 	row = [read.qname,read.pos,readLength,read.alen]
-# 	print row
-	# cigar = 
-	# print cigar
-	# print read.positions[0]
 
