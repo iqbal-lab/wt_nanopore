@@ -6,15 +6,12 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_PATH = os.path.join(BASE_DIR,os.pardir)
 PROJECT_PATH = os.path.abspath(PROJECT_PATH)
-print PROJECT_PATH
 class Reporter(object):
 	"""Generate an error report for ONT reads
 
 	...
     Parameters
     ----------
-    opt : Optparse.opt
-        Options from Optparse
     outfileDir : str
     	Output file directory 
     counter : object
@@ -25,36 +22,35 @@ class Reporter(object):
     	Path to LaTeX report template
 
 	"""
-	def __init__(self,opt,outfileDir,counter,firstRead=None,latexTemplate="../data/template.tex",):
+	def __init__(self,ID,statsDir,outfileDir,stats={},firstRead=None,latexTemplate="../src/template.tex",):
 		self.template = open(latexTemplate,'r')
 		self.docString =  TexString(string=self.template.read())
 		self.outfileDir = outfileDir
-		self.opt = opt
-		self.counter = counter
 		self.read = firstRead
-
 		self.latexWriten = False
-		self.imgDir = PROJECT_PATH + '/proto_err/results/%s/img/' % (self.opt.runID  )
-		
-
-	def renderOptions(self):
-		outstr  = ""
-		d =  vars(self.opt)
-		# for k,v in d.iteritems():
-		# 	tmpStr = "".join([str(k),' : ',str(v),'\\'])
-		# 	outstr = outstr.join(tmpStr)
-		# print outstr
-		outstr = str(d)
-		return outstr
-
-	# def addCaptionToTable(self,tableString,captionString):
-	# 	caption = "\caption{%s}"
-		
-
+		self.statsDir = statsDir
+		self.imgDir = statsDir + 'img/'
+		self.ID = ID
+		self.stats = stats
+		print self.stats
 
 	def renderTemplate(self):
 		## Metadata
-		pass
+		self.docString.replace(k='ID',v=self.ID)
+		self.docString.replace(k='numBases',v=str(self.stats['numBases']),escape=False)
+		self.docString.replace(k='numAlignedBases',v=str(self.stats['numAlignedBases']),escape=False)
+		self.docString.replace(k='M',v=str(self.stats['M']),escape=False)
+		self.docString.replace(k='D',v=str(self.stats['D']),escape=False)
+		self.docString.replace(k='I',v=str(self.stats['I']),escape=False)
+		self.docString.replace(k='S',v=str(self.stats['S']),escape=False)
+		self.docString.replace(k='H',v=str(self.stats['H']),escape=False)
+		self.docString.replace(k='longestRead',v=str(self.stats['longestRead']),escape=False)
+		self.docString.replace(k='longestAlignedRead',v=str(self.stats['longestAlignedRead']),escape=False)
+		## Figures
+
+		self.docString.replace(k='histogram_of_read_length',v=self.imgDir + "histogram_of_read_length.png" ,escape=False)
+		self.docString.replace(k='position_versus_coverage',v=self.imgDir + "position_versus_coverage.png" ,escape=False)
+		self.docString.replace(k='read_length_vs_aligned_read_length',v=self.imgDir + "read_length_vs_aligned_read_length.png" ,escape=False)
 
 	def writeLatex(self):
 		self.renderTemplate()
