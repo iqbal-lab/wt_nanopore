@@ -1,4 +1,6 @@
 banyan-venv/
+*.Rhistory
+venv
 *.pyc
 *~
 *.fq
