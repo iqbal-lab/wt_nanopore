@@ -22,9 +22,11 @@ b=$(basename $f)
 directory=$(dirname ${f})
 filename="${b%.*}"
 echo "Converting $f to samfile"
-maf-convert.py sam $f > "$directory"/"$filename".sam
+~/tools/banyan_last/scripts/maf-convert.py sam $f > "$directory"/"$filename".sam
 echo "Finished converting $f to samfile. Output in $directory/$filename.sam"
 echo "Converting $directory/$filename.sam to sorted bamfile"
-samtools view -T /Net/wombat/dipro/mmm/data/Nanopore/processed_data/Burn_in/ref/lambda_ref.fasta -bS "$directory"/"$filename".sam | ~/tools/samtools-0.1.17/samtools sort - "$directory"/"$filename".sam.sorted
-samtools index "$directory"/"$filename".sam.sorted.bam
-echo "Finished converting $directory/$filename.sam to sorted bamfile. Output in $directory/$filename.sam.sorted.bam " 
+~/tools/samtools-0.1.17/samtools view -T /Net/wombat/dipro/mmm/data/Nanopore/processed_data/Run_1/ref/BX571856.1.fasta -bS "$directory"/"$filename".sam | ~/tools/samtools-0.1.17/samtools sort - "$directory"/"$filename".sam.sorted
+~/tools/samtools-0.1.17/samtools index "$directory"/"$filename".sam.sorted.bam
+mv "$directory"/"$filename".sam.sorted.bam "$directory"/"$filename".sorted.bam
+mv "$directory"/"$filename".sam.sorted.bam.bai "$directory"/"$filename".sorted.bam.bai
+echo "Finished converting $directory/$filename.sam to sorted bamfile. Output in $directory/$filename.sorted.bam " 

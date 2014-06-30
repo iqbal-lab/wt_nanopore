@@ -17,8 +17,8 @@ args <- commandArgs(trailingOnly = TRUE)
 dirname <- args
 printf <- function(...)print(sprintf(...))
 
-coverageData <- read.table(paste(dirname,"template_coverage.dat",sep=""),header=T)
-alignmentData <- read.table(paste(dirname,"template_alignment.dat",sep=""),header=T)
+coverageData <- read.table(paste(dirname,"template_last_coverage.dat",sep=""),header=T)
+alignmentData <- read.table(paste(dirname,"template_last_alignment.dat",sep=""),header=T)
 ## Create output directoy 
 outdir <- file.path(dirname, "img")
 

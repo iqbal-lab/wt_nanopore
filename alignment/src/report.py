@@ -37,6 +37,8 @@ class Reporter(object):
 	def renderTemplate(self):
 		## Metadata
 		self.docString.replace(k='ID',v=self.ID)
+		self.docString.replace(k='numReads',v=str(self.stats['numReads']),escape=False)
+		self.docString.replace(k='numAlignedReads',v=str(self.stats['numAlignedReads']),escape=False)
 		self.docString.replace(k='numBases',v=str(self.stats['numBases']),escape=False)
 		self.docString.replace(k='numAlignedBases',v=str(self.stats['numAlignedBases']),escape=False)
 		self.docString.replace(k='M',v=str(self.stats['M']),escape=False)

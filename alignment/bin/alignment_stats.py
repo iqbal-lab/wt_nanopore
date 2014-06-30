@@ -42,22 +42,25 @@ with open(covOutfile,'w') as outcov:
         writer.writerow(row)
 
 
-runningstats = {'numBases':0 ,
-				'numAlignedBases':0 ,
-				'M':0 ,
-				'I':0 ,
-				'D':0 ,
-				'S':0 ,
-				'H':0 ,
-				'longestRead': 0 ,
-				'longestAlignedRead': 0 ,
-				}
+runningstats = {'numReads':0,
+                'numAlignedReads':0,
+                'numBases':0 ,
+                'numAlignedBases':0 ,
+                'M':0 ,
+                'I':0 ,
+                'D':0 ,
+                'S':0 ,
+                'H':0 ,
+                'longestRead': 0 ,
+                'longestAlignedRead': 0 ,
+                }
 alignOutfile = makeOutFileName(opt.file,"alignment.dat")
 print "Calculating alignment stats. Outputting to %s " % alignOutfile
 with open(alignOutfile,'w') as outali:
     writer = csv.writer(outali,delimiter="\t")
     writer.writerow(["id","is_unmapped","pos","len","aligned_length","M","I","D","S","H"])
     for read in samfile.fetch():
+        runningstats['numReads'] += 1
         readLength = 0
         M,I,D,S,H = (0,0,0,0,0)
         for t,i in read.cigar:
@@ -85,12 +88,14 @@ with open(alignOutfile,'w') as outali:
             else:
                 pass
         row = [read.qname,int(read.is_unmapped),read.pos,readLength,read.alen,M,I,D,S,H]
+        if not read.is_unmapped:
+            runningstats['numAlignedReads'] += 1
         runningstats['numBases'] += readLength
         runningstats['numAlignedBases'] += read.alen
         if readLength > runningstats['longestRead']:
-        	runningstats['longestRead'] = readLength
+            runningstats['longestRead'] = readLength
         if read.alen > runningstats['longestAlignedRead']:
-        	runningstats['longestAlignedRead'] = read.alen
+            runningstats['longestAlignedRead'] = read.alen
         writer.writerow(row)
 
 outdir = makeOutDir(opt.file)
