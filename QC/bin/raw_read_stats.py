@@ -9,6 +9,7 @@ import glob
 import logging
 import csv
 from Bio import SeqIO
+from Bio.SeqUtils import GC
 import numpy as np
 import operator
 
@@ -38,27 +39,27 @@ def makeDir(directory):
 def makeOutFileName(fastq):
 	outdir = "/".join(fastq.split("/")[:-2]) + "/stats/"
 	makeDir(outdir)
-	outname = fastq.split("/")[-1].split(".fq")[0] + "_raw_read_stats.dat"
+	outname = "raw_read_stats.dat"
 	return outdir + outname
 
 ## Define some parameters
 qualbins = range(60)
 
-header = ["id","length","meanQualScore","sdQualScore"]
+header = ["readType","id","length","meanQualScore","sdQualScore","GC"]
 logging.info("Analysing fastq files")
-for fastq in fqFilelist:
-	## Storing values for histograms
-	runningQualityScoreHist = [0]*len(qualbins)
-	## File names 
-	outfile_name = makeOutFileName(fastq)
-	logging.info("%s " % outfile_name.split('/')[-1])
-	## Write stats to file
-	with open(outfile_name,'w') as outfile:
-		writer = csv.writer(outfile,delimiter="\t")
-		writer.writerow(header)
+outfile_name = makeOutFileName(fqFilelist[0])
+with open(outfile_name,'w') as outfile:
+	writer = csv.writer(outfile,delimiter="\t")
+	writer.writerow(header)
+	for fastq in fqFilelist:
+		readType= fastq.split("/")[-1].split(".fq")[0]
+		## Storing values for histograms
+		runningQualityScoreHist = [0]*len(qualbins)		
+		# logging.info("%s " % outfile_name.split('/')[-1])
+		## Write stats to file
 		for record in SeqIO.parse(fastq, "fastq-sanger"):
 			qualityScores = record.letter_annotations["phred_quality"]
-			row = [record.id,len(record.seq),np.mean(qualityScores),np.std(qualityScores)]
+			row = [readType,record.id,len(record.seq),np.mean(qualityScores),np.std(qualityScores),GC(record.seq)]
 			hist,bin_edges=np.histogram(qualityScores,bins=qualbins)
 			runningQualityScoreHist = [i+j for i,j in zip(hist,runningQualityScoreHist)]
 			writer.writerow(row)
