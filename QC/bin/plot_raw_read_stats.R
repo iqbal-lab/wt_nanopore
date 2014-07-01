@@ -15,7 +15,7 @@ theme2 <- function(){
 pal <- c("#E41A1C","#4DAF4A","#377EB8","#984EA3","#FF7F00","#A65628","#F781BF","#999999")
 args <- commandArgs(trailingOnly = TRUE)
 filename <- args
-filename <- "/Users/phelimb/Dropbox/Nanopore/processed_data/Run_1/Minion2/stats/raw_read_stats.dat"
+filename <- "/Users/phelimb/Dropbox/Nanopore/processed_data/Run_1/Minion3/stats/raw_read_stats.dat"
 data <- read.table(filename,header=T)
 data$GC <- as.numeric(as.character(data$GC))
 data$meanQualScore <- as.numeric(as.character(data$meanQualScore))
