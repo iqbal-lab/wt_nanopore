@@ -21,8 +21,10 @@ f=$1
 b=$(basename $f)
 directory=$(dirname ${f})
 filename="${b%.*}"
+echo "Making unique last alignment"
+~/tools/banyan_last/src/last-split $f > $f.unique
 echo "Converting $f to samfile"
-~/tools/banyan_last/scripts/maf-convert.py sam $f > "$directory"/"$filename".sam
+~/tools/banyan_last/scripts/maf-convert.py sam $f.unique > "$directory"/"$filename".sam
 echo "Finished converting $f to samfile. Output in $directory/$filename.sam"
 echo "Converting $directory/$filename.sam to sorted bamfile"
 ~/tools/samtools-0.1.17/samtools view -T /Net/wombat/dipro/mmm/data/Nanopore/processed_data/Run_1/ref/BX571856.1.fasta -bS "$directory"/"$filename".sam | ~/tools/samtools-0.1.17/samtools sort - "$directory"/"$filename".sam.sorted

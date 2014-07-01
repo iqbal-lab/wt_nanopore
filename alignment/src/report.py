@@ -64,7 +64,7 @@ class Reporter(object):
 	def generatePdfReport(self):
 		if not self.latexWriten:
 			self.writeLatex()
-		cmd =  'pdflatex -output-directory=%s %alignment_report.tex  ' % (self.outfileDir,self.outfileDir)
+		cmd =  'pdflatex -output-directory=%s %salignment_report.tex  ' % (self.outfileDir,self.outfileDir)
 		print cmd
 		logging.info("Running %s" % cmd)
 		proc=subprocess.Popen(shlex.split(cmd))
