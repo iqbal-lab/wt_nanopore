@@ -56,15 +56,15 @@ class Reporter(object):
 
 	def writeLatex(self):
 		self.renderTemplate()
-		logging.info("Writing LaTeX to %s " % (self.outfileDir+'report.tex'))
-		with open(self.outfileDir+'report.tex','w') as outfile:
+		logging.info("Writing LaTeX to %s " % (self.outfileDir+'alignment_report.tex'))
+		with open(self.outfileDir+'alignment_report.tex','w') as outfile:
 			outfile.write(self.docString.text)
 		self.latexWriten = True
 
 	def generatePdfReport(self):
 		if not self.latexWriten:
 			self.writeLatex()
-		cmd =  'pdflatex -output-directory=%s %sreport.tex  ' % (self.outfileDir,self.outfileDir)
+		cmd =  'pdflatex -output-directory=%s %alignment_report.tex  ' % (self.outfileDir,self.outfileDir)
 		print cmd
 		logging.info("Running %s" % cmd)
 		proc=subprocess.Popen(shlex.split(cmd))
