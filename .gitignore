@@ -1,3 +1,10 @@
+*.dat
+*.png
+banyan-venv/
+*.pdf
+*.Rhistory
+venv
+*.pyc
 *~
 *.fq
 *.DS_Store

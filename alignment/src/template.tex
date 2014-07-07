@@ -1,0 +1,129 @@
+%% Title
+%% Template for proto_err reports
+%% Phelim Bradley - psb31
+%% 
+
+%% Text following a percent sign (%) until the end of line is treated
+%% as a comment.
+
+\documentclass[a4paper,12pt]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This section is called the preamble, where we can specify which
+%% latex packages we required.  Most (but not of all) of the packages
+%% below should be fairly standard in most latex documents.  The
+%% exception is xspace and the new \latex command, which you probably
+%% do not need.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Bibliography style:
+\usepackage{mathtools}
+\usepackage{mathptmx}           % Use the Times font.
+\usepackage{graphicx}           % Needed for including graphics.
+\usepackage{url}                % Facility for activating URLs.
+\usepackage{xspace,color}
+\usepackage{enumerate}
+%\usepackage{csvsimple}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{subfig}
+\usepackage{tabularx}
+\usepackage{listings}
+ \captionsetup{justification=centering,singlelinecheck=on}
+
+
+
+
+%% Set the paper size to be A4, with a 2cm margin 
+%% all around the page.
+\usepackage[a4paper,margin=2cm]{geometry}
+
+%% Natbib is a popular style for formatting references.
+\usepackage{natbib}
+%% bibpunct sets the punctuation used for formatting citations.
+%\bibpunct{[}{]}{;}{a}{,}{,}
+
+%% This is an example of a new macro that I've created to save me
+%% having to type \LaTeX each time.  The xspace command provides space
+%% after the word LaTeX where appropriate.
+\usepackage{xspace}
+\providecommand*{\latex}{\LaTeX\xspace}
+
+%Make some shortcuts
+
+\def\be{\begin{equation}}
+\def\ee{\end{equation}}
+
+\def\bea{\begin{eqnarray}}
+\def\eea{\end{eqnarray}}
+
+
+\def\toprule{\hline}
+\def\midrule{\hline}
+\def\bottomrule{\hline}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Start of the document.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+
+
+
+\author{Proto\_err}
+\date{\today}
+\title{  Alignment Report {{ID}}   }
+\maketitle
+Number of Reads: {{numReads}} \\
+Number of Aligned Reads : {{numAlignedReads}} \\
+Number of Bases: {{numBases}} \\
+Number of Aligned Bases : {{numAlignedBases}} \\
+Number of MatchMissMatch Bases : {{M}} \\
+Number of Inserted Bases: {{I}} \\
+Number of Deleted Bases: {{D}} \\
+Number of Softclipped Bases: {{S}}\\
+Number of HardClipped Bases: {{H}}\\
+Longest Read: {{longestRead}}\\
+Longest Aligned Read : {{longestAlignedRead}}\\
+
+
+% \begin{verbatim}
+% {{refRead}}
+% {{alignedRead}}
+% \end{verbatim}
+
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=10cm]{{{histogram_of_read_length}}}
+  \caption{histogram of read length}
+  \label{fig:histogramofreadlength}
+\end{figure}
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=10cm]{{{position_versus_coverage}}}
+  \caption{position versus coverage}
+  \label{fig:positionversuscoverage}
+\end{figure}
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=10cm]{{{read_length_vs_aligned_read_length}}}
+  \caption{read length vs aligned read length}
+  \label{fig:readlengthvsalignedreadlength}
+\end{figure}
+	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\appendix
+
+
+
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% The end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
