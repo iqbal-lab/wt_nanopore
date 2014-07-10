@@ -58,27 +58,6 @@ set3 = brewer2mpl.get_map('Set3', 'qualitative', 12).mpl_colors
 
 # <headingcell level=1>
 
-# Plan
-
-# <markdowncell>
-
-# - For each read get
-#     - 
-# - Summary of logs from https://nanoporetech.atlassian.net/wiki/download/attachments/2983444/summarise_ont_logs.py.txt?version=1&modificationDate=1402616251617&api=v2
-# - Extract template, complement and 2D reads to fastq
-# - Ensure can get last running on fastq and outputting base qualities. Also, any way of getting mapping qualities? And does last give multiple mappings for any reads?
-# - Create report of number of reads mapped for template, complement and 2D
-# - Figure out how to get a sequence identity metric for each read
-# - Run last with multiple different parameters
-# - For each set of parameters, calculate number of fast5 files, number base called, %2D, %template only, %reads mapping, mean identity of mapped reads, total read length, number of variants (SNPs and indels) after GATK calling (UG and HC), best perfect kmer, median best perfect kmer
-# - Best perfect kmer per read distribution
-# - Also try using BLAST via Biopython
-# - 
-# - Is there anything in big file that is not in individual reads files?
-# - Are there time stamps in fast5 reads files? If so, change fast5stats to write out times. Also, maybe include num of events and possibly other data
-
-# <headingcell level=1>
-
 # Functions
 
 # <codecell>
@@ -145,6 +124,8 @@ def classify_reads_from_logs(processed_reads_dir):
 classify_read_from_log()
 
 # <codecell>
+
+# Note I haven't used this as far too slow
 
 def blast_summary(fastq_record, hit_def='Enterobacteria phage lambda, complete genome'):
     result_handle = NCBIWWW.qblast("blastn", "nt", fastq_record.seq)
@@ -346,6 +327,8 @@ print read_summary_from_fast5('/data/minion/PROCESSED_DATA/KWIAT50/expt01_workfl
 
 # <codecell>
 
+# Note I haven't used this as far too slow
+
 def blast_summary_from_fast5(fast5_filename='/data/minion/PROCESSED_DATA/KWIAT50/expt01_workflow_1_9_1/KWIAT50_K50_expt01_std_lambda_DNA_140619_A_4429_1_ch102_file11_strand.fast5'):
     print '.',
     blast_summary_dtype = [
@@ -444,7 +427,7 @@ def summarise_bam_reads(all_reads):
     
     return read_summaries
 
-all_reads = list(pysam.Samfile("/data/minion/work/expt01_workflow_1_9_1/last/ont_lambda/reads_2D.last.sorted.bam", "rb" ).fetch())
+all_reads = list(pysam.Samfile("/data/minion/work/expt01_workflow_1_9_1/last/ont_lambda/reads_2D.2.1.last.sorted.bam", "rb" ).fetch())
 temp_read_summaries = summarise_bam_reads(all_reads)
 
 # <codecell>
@@ -542,35 +525,17 @@ for experiment in experiments:
         mapped_read_summaries[experiment][reference_genome] = OrderedDict()
         for read_type in read_types:
             print experiment, reference_genome, read_type
-            samfile = pysam.Samfile("/data/minion/work/%s/last/%s/reads_%s.last.sorted.bam" %(experiment, reference_genome, read_type), "rb" )
-            all_reads = list(samfile.fetch())
-            samfile.close()
-            mapped_read_summaries[experiment][reference_genome][read_type] = summarise_bam_reads(all_reads)
-
-# <codecell>
-
-mapped_read_summaries['expt01_workflow_1_9_1']['ont_lambda']['template']
-
-# <codecell>
-
-read_summaries.keys()
-
-# <codecell>
-
-mapped_read_summaries['expt01_workflow_1_9_1']['cs']['2D'].dtype
-
-# <codecell>
-
-print len(mapped_read_summaries['expt01_workflow_1_9_1']['cs']['2D']['read_names'])
-print len(np.unique(mapped_read_summaries['expt01_workflow_1_9_1']['cs']['2D']['read_names']))
-print len(mapped_read_summaries['E06_ANOPH_workflow_1_9_1']['cs']['2D']['read_names'])
-print len(np.unique(mapped_read_summaries['E06_ANOPH_workflow_1_9_1']['cs']['2D']['read_names']))
-print len(mapped_read_summaries['E06_ANOPH_workflow_1_9_1']['AgamP3']['template']['read_names'])
-print len(np.unique(mapped_read_summaries['E06_ANOPH_workflow_1_9_1']['AgamP3']['template']['read_names']))
-
-# <codecell>
-
-mapped_read_summaries['E06_ANOPH_workflow_1_9_1']['AgamP3']['template']['read_names']
+            mapped_read_summaries_fn = os.path.join(output_dirs[experiment], "mapped_read_summaries_%s_%s.npy" % (reference_genome, read_type))
+            if os.path.exists(mapped_read_summaries_fn):
+                mapped_read_summaries[experiment][reference_genome][read_type] = np.load(mapped_read_summaries_fn)
+            else:
+                lastal_a = experiments[experiment]['lastal_a']
+                lastal_m = experiments[experiment]['lastal_m']
+                samfile = pysam.Samfile("/data/minion/work/%s/last/%s/reads_%s.%d.%d.last.sorted.bam" %(experiment, reference_genome, read_type, lastal_a, lastal_m), "rb" )
+                all_reads = list(samfile.fetch())
+                samfile.close()
+                mapped_read_summaries[experiment][reference_genome][read_type] = summarise_bam_reads(all_reads)
+                np.save(mapped_read_summaries_fn, mapped_read_summaries[experiment][reference_genome][read_type])
 
 # <codecell>
 
@@ -578,30 +543,14 @@ etl.fromarray(mapped_read_summaries['expt01_workflow_1_9_1']['cs']['2D']).head()
 
 # <codecell>
 
-read_summaries['expt01_workflow_1_9_1'].dtype
-
-# <codecell>
-
-full_read_summaries = OrderedDict()
 read_summary_tables = OrderedDict()
-# mapped_read_intial_tables = OrderedDict()
-# read_summary_initial_tables = OrderedDict()
-# read_summary_intermediate_tables = OrderedDict()
-# read_summary_intermediate_tables_2 = OrderedDict()
 
 for experiment in experiments:
     print experiment
     read_summary_table = (etl
         .fromarray(read_summaries[experiment])
     )
-#     read_summary_initial_tables[experiment] = read_summary_table
-#     mapped_read_intial_tables[experiment] = OrderedDict()
-#     read_summary_intermediate_tables[experiment] = OrderedDict()
-#     read_summary_intermediate_tables_2[experiment] = OrderedDict()
     for reference_genome in reference_genomes:
-#         mapped_read_intial_tables[experiment][reference_genome] = OrderedDict()
-#         read_summary_intermediate_tables[experiment][reference_genome] = OrderedDict()
-#         read_summary_intermediate_tables_2[experiment][reference_genome] = OrderedDict()
         for read_type in read_types:
             print experiment, reference_genome, read_type
             mapped_read_table = (etl
@@ -618,18 +567,7 @@ for experiment in experiments:
                     )
                 )
             )
-#             mapped_read_intial_tables[experiment][reference_genome][read_type] = mapped_read_table
-#             read_summary_intermediate_tables[experiment][reference_genome][read_type] = mapped_read_table
-#             read_type_field_name = 'read_type_%s_%s' % (reference_genome, read_type)
-#             read_name_temp_field_name = 'read_names_temp_%s_%s' % (reference_genome, read_type)
             read_name_field_name = 'read_names_%s_%s' % (reference_genome, read_type)
-#             read_name_field_format = 'channel_%%d_read_%%d_%s' % (read_type)
-#             print read_name_field_name, read_name_field_format
-#             read_summary_intermediate_tables[experiment][reference_genome][read_type] = (read_summary_table
-#                 .addfield(read_name_field_name, lambda(rec): read_name_field_format % (rec['channel_number'], rec['read_number']))
-#             )
-#             print read_type
-#                 .addfield(read_name_field_name, lambda(rec): ('channel_%%d_read_%%d_%s' % (read_type)) % (rec['channel_number'], rec['read_number']))  
             temp_read_summary_table = (read_summary_table
                 .addfield('read_type', read_type)
                 .addfield('read_name_temp', lambda(rec): 'run_id_%s_channel_%d_read_%d' % (rec['run_id'], rec['channel_number'], rec['read_number']))
@@ -641,108 +579,11 @@ for experiment in experiments:
                 .cutout('read_name_temp')
                 .leftjoin(mapped_read_table, missing=0)
             )
-#             read_summary_table = (read_summary_table
-#                 .leftjoin(mapped_read_table)
-#             )
-#             read_summary_table = (read_summary_table
-#                 .addfield(read_type_field_name, read_type)
-#                 .addfield(read_name_temp_field_name, lambda(rec): 'channel_%d_read_%d' % (rec['channel_number'], rec['read_number']))
-#                 .addfield(read_name_field_name, lambda(rec): rec[read_type_field_name] + '_' + rec[read_name_temp_field_name])
-# #                 .addfield(read_name_field_name, lambda(rec): 'channel_%d_read_%d_%s' % (rec['channel_number'], rec['read_number'], rec[read_type_field_name]))
-# #                 .addfield(read_name_field_name, lambda(rec): ('channel_%d_read_%d_' % (rec['channel_number'], rec['read_number'])) + read_type)
-# #                 .addfield(read_name_field_name, lambda(rec): read_name_field_value(rec, read_type))
-# #                 .convert(read_name_field_name, lambda rec: rec[read_name_field_name] + rec[read_type_field_name])
-# #                 .leftjoin(mapped_read_table)
-#             )
-#             new_read_type = read_type.copy()
-#             print new_read_type
-#             read_summary_table.convert(read_name_field_name, lambda v: v + new_read_type)
-            print read_type
-#             read_summary_intermediate_tables_2[experiment][reference_genome][read_type] = read_summary_table
-
-
-            print experiment, reference_genome, read_type
-            samfile = pysam.Samfile("/data/minion/work/%s/last/%s/reads_%s.last.sorted.bam" %(experiment, reference_genome, read_type), "rb" )
-            all_reads = list(samfile.fetch())
-            samfile.close()
-            mapped_read_summaries[experiment][reference_genome][read_type] = summarise_bam_reads(all_reads)
     read_summary_tables[experiment] = read_summary_table
 
 # <codecell>
 
-read_summary_tables.keys()
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].select(lambda rec: rec['fragments_3D7_V3_2D'] > 0).head(10)
-
-# <codecell>
-
-read_summary_tables['expt02_workflow_1_9_1'].select(lambda rec: rec['fragments_3D7_V3_2D'] > 0).head(10)
-
-# <codecell>
-
-read_summary_tables['expt03_workflow_1_9_1'].select(lambda rec: rec['fragments_AgamP3_2D'] > 0).head(10)
-
-# <codecell>
-
-read_summary_tables['expt04_workflow_1_9_1'].select(lambda rec: rec['fragments_ont_lambda_2D'] > 0).head(10)
-
-# <codecell>
-
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].head()
-
-# <codecell>
-
-read_summary_table = read_summary_tables['expt01_workflow_1_9_1']
-shape(read_summary_table)
-
-# <codecell>
-
-temp_array2 = torecarray(read_summary_table.cut(read_summary_table.header()[45:50]))
-
-# <codecell>
-
-temp_array2.dtype.names
-
-# <codecell>
-
-temp_array2['total_fragment_length_ont_lambda_template'].astype(np.float)
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].header()
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].select(lambda rec: (rec['duration_read'] > 0) and (rec['duration_read'] < rec['duration_template'])).head(3)
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].select(lambda rec: (rec['duration_read'] > 0) and (rec['duration_template'] == 0.0)).head(3)
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].select(lambda rec: rec['fragments_ont_lambda_2D'] > 0).head(3)
-
-# <codecell>
-
-read_summary_tables['expt01_workflow_1_9_1'].select(lambda rec: rec['fragments_cs_2D'] > 0).head(3)
-
-# <codecell>
-
-read_summary_tables['E06_ANOPH_workflow_1_9_1'].select(lambda rec: rec['fragments_AgamP3_template']==1 and rec['fragments_AgamP3_complement']==1 and rec['fragments_AgamP3_2D']==1).head()
-
-# <codecell>
-
-read_summary_tables['E06_ANOPH_workflow_1_9_1'].select(lambda rec: rec['has_complement_read']==True and rec['has_2D_read']==False).head()
-
-# <codecell>
-
-read_summary_tables['E06_ANOPH_workflow_1_9_1'].select(lambda rec: rec['has_complement_read']==True and rec['has_template_read']==False).head()
+read_summary_tables['E07_ANOPH_workflow_1_9_1'].select(lambda rec: rec['fragments_AgamP3_2D'] > 0).head(3)
 
 # <codecell>
 
@@ -774,9 +615,9 @@ def summarise_experiment(experiment = 'expt01_workflow_1_9_1', read_summary_tabl
              np.mean(read_summary_array['read_length_template'][read_summary_array['read_length_template'] > 0]),
              np.mean(read_summary_array['read_length_complement'][read_summary_array['read_length_complement'] > 0]),
              np.mean(read_summary_array['read_length_2D'][read_summary_array['read_length_2D'] > 0]),
-             np.mean(read_summary_array['gc_template']),
-             np.mean(read_summary_array['gc_complement']),
-             np.mean(read_summary_array['gc_2D']),
+             np.mean(read_summary_array['gc_template'][logical_not(isnan(read_summary_array['gc_template']))]),
+             np.mean(read_summary_array['gc_complement'][logical_not(isnan(read_summary_array['gc_complement']))]),
+             np.mean(read_summary_array['gc_2D'][logical_not(isnan(read_summary_array['gc_2D']))]),
              np.mean(read_summary_array['duration_read'][(read_summary_array['duration_read'] > 0) & (read_summary_array['duration_template'] > 0)]),
              np.mean(read_summary_array['duration_read'][read_summary_array['duration_read'] > 0]),
              np.mean(read_summary_array['duration_template'][read_summary_array['duration_template'] > 0]),
@@ -856,7 +697,7 @@ def summarise_experiment(experiment = 'expt01_workflow_1_9_1', read_summary_tabl
     experiment_summary = numpy.lib.recfunctions.merge_arrays(experiment_summary_dict.values(), flatten=True)
     return experiment_summary
 
-summarise_experiment()
+summarise_experiment()['mean_gc_template']
 
 # <codecell>
 
@@ -870,7 +711,7 @@ experiment_summaries = np.hstack(experiment_summaries_dict.values())
 
 # <codecell>
 
-toxlsx(fromarray(experiment_summaries), "/Users/rpearson/Desktop/experiment_summaries_20140708.xlsx")
+toxlsx(fromarray(experiment_summaries), "/Users/rpearson/Desktop/experiment_summaries_20140710.xlsx")
 
 # <codecell>
 
@@ -878,281 +719,10 @@ etl.fromarray(experiment_summaries)
 
 # <codecell>
 
-read_summary_tables['E05_aliquot_3_workflow_1_9_1'].select(lambda rec: rec['total_fragment_length_3D7_V3_2D'] == 2662).head(3)
-
-# <codecell>
-
-read_summary_tables['E05_aliquot_4_workflow_1_9_1'].select(lambda rec: rec['total_fragment_length_3D7_V3_template'] == 573241).head(3)
 
 # <codecell>
 
 
 # <codecell>
 
-
-# <codecell>
-
-
-# <codecell>
-
-type((etl.fromarray(read_summaries['expt01_workflow_1_9_1']).addfield('temp', 'temp_value')))
-
-# <codecell>
-
-torecarray(etl.fromarray(read_summaries['expt01_workflow_1_9_1']).addfield('temp', 'temp_value'))
-
-# <headingcell level=1>
-
-# Sandbox
-
-# <codecell>
-
-def read_name_field_value(rec, read_type):
-    return ('channel_%d_read_%d_' % (rec['channel_number'], rec['read_number'])) + read_type
-
-# <codecell>
-
-def summarise_experiment(experiment = 'expt01_workflow_1_9_1', read_summary_tables=read_summary_tables):
-    read_summary_table = read_summary_tables[experiment]
-    read_summary_array = toarray(read_summary_table)
-    experiment_summary = np.array(
-        (
-             experiment,
-             '_'.join(np.unique(read_summary_array['device_id'])),
-             '_'.join(np.unique(read_summary_array['asic_id'])),
-             '_'.join(np.unique(read_summary_array['flow_cell_id'])),
-             '___'.join(map(convert_time, np.unique(read_summary_array['exp_start_time']))),
-             len(read_summary_array),
-             np.sum(read_summary_array['is_analysed']),
-             np.sum(read_summary_array['is_base_called_2d']),
-             np.sum(read_summary_array['has_template_read']),
-             np.sum(read_summary_array['has_complement_read']),
-             np.sum(read_summary_array['has_2D_read']),
-             len(np.unique(read_summary_array['channel_number'])),
-             len(np.unique(read_summary_array['channel_number'][read_summary_array['has_2D_read']])),
-             np.sum(read_summary_array['read_length_template']),
-             np.sum(read_summary_array['read_length_complement']),
-             np.sum(read_summary_array['read_length_2D']),
-             np.mean(read_summary_array['read_length_template'][read_summary_array['read_length_template'] > 0]),
-             np.mean(read_summary_array['read_length_complement'][read_summary_array['read_length_complement'] > 0]),
-             np.mean(read_summary_array['read_length_2D'][read_summary_array['read_length_2D'] > 0]),
-             np.mean(read_summary_array['duration_read'][(read_summary_array['duration_read'] > 0) & (read_summary_array['duration_template'] > 0)]),
-             np.mean(read_summary_array['duration_read'][read_summary_array['duration_read'] > 0]),
-             np.mean(read_summary_array['duration_template'][read_summary_array['duration_template'] > 0]),
-             np.mean(read_summary_array['duration_complement'][read_summary_array['duration_complement'] > 0]),
-             np.mean(read_summary_array['basecall_mean_qscore_template'][read_summary_array['basecall_mean_qscore_template'] > 0]),
-             np.mean(read_summary_array['basecall_mean_qscore_complement'][read_summary_array['basecall_mean_qscore_complement'] > 0]),
-             np.mean(read_summary_array['basecall_mean_qscore_2D'][read_summary_array['basecall_mean_qscore_2D'] > 0]),
-             np.mean(read_summary_array['basecall_strand_score_template'][read_summary_array['basecall_strand_score_template'] > 0]),
-             np.mean(read_summary_array['basecall_strand_score_complement'][read_summary_array['basecall_strand_score_complement'] > 0]),
-             np.sum(read_summary_array['fragments_ont_lambda_template'] > 0),
-             np.sum(read_summary_array['fragments_ont_lambda_complement'] > 0),
-             np.sum(read_summary_array['fragments_ont_lambda_2D'] > 0),
-             np.sum(read_summary_array['fragments_cs_template'] > 0),
-             np.sum(read_summary_array['fragments_cs_complement'] > 0),
-             np.sum(read_summary_array['fragments_cs_2D'] > 0),
-             np.sum(read_summary_array['fragments_3D7_V3_template'] > 0),
-             np.sum(read_summary_array['fragments_3D7_V3_complement'] > 0),
-             np.sum(read_summary_array['fragments_3D7_V3_2D'] > 0),
-             np.sum(read_summary_array['fragments_AgamP3_template'] > 0),
-             np.sum(read_summary_array['fragments_AgamP3_complement'] > 0),
-             np.sum(read_summary_array['fragments_AgamP3_2D'] > 0),
-             0.0 if np.sum(read_summary_array['fragments_ont_lambda_template'] > 0) == 0 else np.mean(read_summary_array['fragments_ont_lambda_template'].astype(np.float)[read_summary_array['fragments_ont_lambda_template'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_ont_lambda_complement'] > 0) == 0 else np.mean(read_summary_array['fragments_ont_lambda_complement'].astype(np.float)[read_summary_array['fragments_ont_lambda_complement'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_ont_lambda_2D'] > 0) == 0 else np.mean(read_summary_array['fragments_ont_lambda_2D'].astype(np.float)[read_summary_array['fragments_ont_lambda_2D'] > 0]),
-             np.sum(read_summary_array['read_length_template'][read_summary_array['fragments_ont_lambda_template'] > 0]),
-             np.sum(read_summary_array['read_length_complement'][read_summary_array['fragments_ont_lambda_complement'] > 0]),
-             np.sum(read_summary_array['read_length_2D'][read_summary_array['fragments_ont_lambda_2D'] > 0]),
-             np.sum(read_summary_array['total_fragment_length_ont_lambda_template']),
-             np.sum(read_summary_array['total_fragment_length_ont_lambda_complement']),
-             np.sum(read_summary_array['total_fragment_length_ont_lambda_2D']),
-             np.sum(read_summary_array['mismatches_ont_lambda_template']),
-             np.sum(read_summary_array['mismatches_ont_lambda_complement']),
-             np.sum(read_summary_array['mismatches_ont_lambda_2D']),
-             np.sum(read_summary_array['mismatches_ont_lambda_template'])*1.0 / np.sum(read_summary_array['total_fragment_length_ont_lambda_template']),
-             np.sum(read_summary_array['mismatches_ont_lambda_complement'])*1.0 / np.sum(read_summary_array['total_fragment_length_ont_lambda_complement']),
-             np.sum(read_summary_array['mismatches_ont_lambda_2D'])*1.0 / np.sum(read_summary_array['total_fragment_length_ont_lambda_2D']),
-             np.max(read_summary_array['total_fragment_length_ont_lambda_template']),
-             np.max(read_summary_array['total_fragment_length_ont_lambda_complement']),
-             np.max(read_summary_array['total_fragment_length_ont_lambda_2D']),
-             0.0 if np.sum(read_summary_array['fragments_cs_template'] > 0) == 0 else np.mean(read_summary_array['fragments_cs_template'].astype(np.float)[read_summary_array['fragments_cs_template'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_cs_complement'] > 0) == 0 else np.mean(read_summary_array['fragments_cs_complement'].astype(np.float)[read_summary_array['fragments_cs_complement'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_cs_2D'] > 0) == 0 else np.mean(read_summary_array['fragments_cs_2D'].astype(np.float)[read_summary_array['fragments_cs_2D'] > 0]),
-             np.sum(read_summary_array['read_length_template'][read_summary_array['fragments_cs_template'] > 0]),
-             np.sum(read_summary_array['read_length_complement'][read_summary_array['fragments_cs_complement'] > 0]),
-             np.sum(read_summary_array['read_length_2D'][read_summary_array['fragments_cs_2D'] > 0]),
-             np.sum(read_summary_array['total_fragment_length_cs_template']),
-             np.sum(read_summary_array['total_fragment_length_cs_complement']),
-             np.sum(read_summary_array['total_fragment_length_cs_2D']),
-             np.sum(read_summary_array['mismatches_cs_template']),
-             np.sum(read_summary_array['mismatches_cs_complement']),
-             np.sum(read_summary_array['mismatches_cs_2D']),
-             np.sum(read_summary_array['mismatches_cs_template'])*1.0 / np.sum(read_summary_array['total_fragment_length_cs_template']),
-             np.sum(read_summary_array['mismatches_cs_complement'])*1.0 / np.sum(read_summary_array['total_fragment_length_cs_complement']),
-             np.sum(read_summary_array['mismatches_cs_2D'])*1.0 / np.sum(read_summary_array['total_fragment_length_cs_2D']),
-             np.max(read_summary_array['total_fragment_length_cs_template']),
-             np.max(read_summary_array['total_fragment_length_cs_complement']),
-             np.max(read_summary_array['total_fragment_length_cs_2D']),
-             0.0 if np.sum(read_summary_array['fragments_3D7_V3_template'] > 0) == 0 else np.mean(read_summary_array['fragments_3D7_V3_template'].astype(np.float)[read_summary_array['fragments_3D7_V3_template'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_3D7_V3_complement'] > 0) == 0 else np.mean(read_summary_array['fragments_3D7_V3_complement'].astype(np.float)[read_summary_array['fragments_3D7_V3_complement'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_3D7_V3_2D'] > 0) == 0 else np.mean(read_summary_array['fragments_3D7_V3_2D'].astype(np.float)[read_summary_array['fragments_3D7_V3_2D'] > 0]),
-             np.sum(read_summary_array['read_length_template'][read_summary_array['fragments_3D7_V3_template'] > 0]),
-             np.sum(read_summary_array['read_length_complement'][read_summary_array['fragments_3D7_V3_complement'] > 0]),
-             np.sum(read_summary_array['read_length_2D'][read_summary_array['fragments_3D7_V3_2D'] > 0]),
-             np.sum(read_summary_array['total_fragment_length_3D7_V3_template']),
-             np.sum(read_summary_array['total_fragment_length_3D7_V3_complement']),
-             np.sum(read_summary_array['total_fragment_length_3D7_V3_2D']),
-             np.sum(read_summary_array['mismatches_3D7_V3_template']),
-             np.sum(read_summary_array['mismatches_3D7_V3_complement']),
-             np.sum(read_summary_array['mismatches_3D7_V3_2D']),
-             np.sum(read_summary_array['mismatches_3D7_V3_template'])*1.0 / np.sum(read_summary_array['total_fragment_length_3D7_V3_template']),
-             np.sum(read_summary_array['mismatches_3D7_V3_complement'])*1.0 / np.sum(read_summary_array['total_fragment_length_3D7_V3_complement']),
-             np.sum(read_summary_array['mismatches_3D7_V3_2D'])*1.0 / np.sum(read_summary_array['total_fragment_length_3D7_V3_2D']),
-             np.max(read_summary_array['total_fragment_length_3D7_V3_template']),
-             np.max(read_summary_array['total_fragment_length_3D7_V3_complement']),
-             np.max(read_summary_array['total_fragment_length_3D7_V3_2D']),
-             0.0 if np.sum(read_summary_array['fragments_AgamP3_template'] > 0) == 0 else np.mean(read_summary_array['fragments_AgamP3_template'].astype(np.float)[read_summary_array['fragments_AgamP3_template'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_AgamP3_complement'] > 0) == 0 else np.mean(read_summary_array['fragments_AgamP3_complement'].astype(np.float)[read_summary_array['fragments_AgamP3_complement'] > 0]),
-             0.0 if np.sum(read_summary_array['fragments_AgamP3_2D'] > 0) == 0 else np.mean(read_summary_array['fragments_AgamP3_2D'].astype(np.float)[read_summary_array['fragments_AgamP3_2D'] > 0]),
-             np.sum(read_summary_array['read_length_template'][read_summary_array['fragments_AgamP3_template'] > 0]),
-             np.sum(read_summary_array['read_length_complement'][read_summary_array['fragments_AgamP3_complement'] > 0]),
-             np.sum(read_summary_array['read_length_2D'][read_summary_array['fragments_AgamP3_2D'] > 0]),
-             np.sum(read_summary_array['total_fragment_length_AgamP3_template']),
-             np.sum(read_summary_array['total_fragment_length_AgamP3_complement']),
-             np.sum(read_summary_array['total_fragment_length_AgamP3_2D']),
-             np.sum(read_summary_array['mismatches_AgamP3_template']),
-             np.sum(read_summary_array['mismatches_AgamP3_complement']),
-             np.sum(read_summary_array['mismatches_AgamP3_2D']),
-             np.sum(read_summary_array['mismatches_AgamP3_template'])*1.0 / np.sum(read_summary_array['total_fragment_length_AgamP3_template']),
-             np.sum(read_summary_array['mismatches_AgamP3_complement'])*1.0 / np.sum(read_summary_array['total_fragment_length_AgamP3_complement']),
-             np.sum(read_summary_array['mismatches_AgamP3_2D'])*1.0 / np.sum(read_summary_array['total_fragment_length_AgamP3_2D']),
-             np.max(read_summary_array['total_fragment_length_AgamP3_template']),
-             np.max(read_summary_array['total_fragment_length_AgamP3_complement']),
-             np.max(read_summary_array['total_fragment_length_AgamP3_2D']),
-#              0.0 if read_summary_array['total_fragment_length_3D7_V3_template'] == 0.0 else np.mean((read_summary_array['mismatches_3D7_V3_template']*1.0 / read_summary_array['total_fragment_length_3D7_V3_template'])[read_summary_array['total_fragment_length_3D7_V3_template'] > 0]),
-#              0.0 if read_summary_array['total_fragment_length_3D7_V3_complement'] == 0 else np.mean(read_summary_array['mismatches_3D7_V3_complement'][read_summary_array['total_fragment_length_3D7_V3_complement'] > 0]*1.0 / read_summary_array['total_fragment_length_3D7_V3_complement'][read_summary_array['total_fragment_length_3D7_V3_complement'] > 0]),
-#              0.0 if read_summary_array['total_fragment_length_3D7_V3_2D'] == 0 else np.mean(read_summary_array['mismatches_3D7_V3_2D'][read_summary_array['total_fragment_length_3D7_V3_2D'] > 0]*1.0 / read_summary_array['total_fragment_length_3D7_V3_2D'][read_summary_array['total_fragment_length_3D7_V3_2D'] > 0]),
-#              0.0 if read_summary_array['total_fragment_length_3D7_V3_template'] == 0 else np.mean(read_summary_array['mismatches_3D7_V3_complement']*1.0 / read_summary_array['total_fragment_length_3D7_V3_complement']),
-#              0.0 if read_summary_array['total_fragment_length_3D7_V3_template'] == 0 else np.mean(read_summary_array['mismatches_3D7_V3_2D']*1.0 / read_summary_array['total_fragment_length_3D7_V3_2D']),
-        ),
-        dtype  = [
-            ('experiment', 'a100'),
-            ('device_ids', 'a100'),
-            ('asic_ids', 'a100'),
-            ('flowcell_ids', 'a100'),
-            ('exp_start_times', 'a1000'),
-            ('total_number_of_reads', np.int),
-            ('number_of_reads_analysed', np.int),
-            ('number_of_reads_base_called', np.int),
-            ('number_of_reads_with_template_calls', np.int),
-            ('number_of_reads_with_complement_calls', np.int),
-            ('number_of_reads_with_2D_calls', np.int),
-            ('number_of_channels_used', np.int),
-            ('number_of_channels_with_2D_calls', np.int),
-            ('total_read_length_template', np.int),
-            ('total_read_length_complement', np.int),
-            ('total_read_length_2D', np.int),
-            ('mean_read_length_template', np.int),
-            ('mean_read_length_complement', np.int),
-            ('mean_read_length_2D', np.int),
-            ('mean_duration_read_where_template_called', np.int),
-            ('mean_duration_read', np.int),
-            ('mean_duration_template', np.int),
-            ('mean_duration_complement', np.int),
-            ('mean_qscore_template', np.float),
-            ('mean_qscore_complement', np.float),
-            ('mean_qscore_2D', np.float),
-            ('mean_strand_score_template', np.float),
-            ('mean_strand_score_complement', np.float),
-            ('number_mapped_to_ont_lambda_template', np.int),
-            ('number_mapped_to_ont_lambda_complement', np.int),
-            ('number_mapped_to_ont_lambda_2D', np.int),
-            ('number_mapped_to_cs_template', np.int),
-            ('number_mapped_to_cs_complement', np.int),
-            ('number_mapped_to_cs_2D', np.int),
-            ('number_mapped_to_3D7_V3_template', np.int),
-            ('number_mapped_to_3D7_V3_complement', np.int),
-            ('number_mapped_to_3D7_V3_2D', np.int),
-            ('number_mapped_to_AgamP3_template', np.int),
-            ('number_mapped_to_AgamP3_complement', np.int),
-            ('number_mapped_to_AgamP3_2D', np.int),
-            ('mean_number_fragments_ont_lambda_template', np.float),
-            ('mean_number_fragments_ont_lambda_complement', np.float),
-            ('mean_number_fragments_ont_lambda_2D', np.float),
-            ('total_length_of_reads_mapped_to_ont_lambda_template', np.int),
-            ('total_length_of_reads_mapped_to_ont_lambda_complement', np.int),
-            ('total_length_of_reads_mapped_to_ont_lambda_2D', np.int),
-            ('mapped_length_of_reads_mapped_to_ont_lambda_template', np.int),
-            ('mapped_length_of_reads_mapped_to_ont_lambda_complement', np.int),
-            ('mapped_length_of_reads_mapped_to_ont_lambda_2D', np.int),
-            ('number_of_mismatches_ont_lambda_template', np.int),
-            ('number_of_mismatches_ont_lambda_complement', np.int),
-            ('number_of_mismatches_ont_lambda_2D', np.int),
-            ('error_rate_ont_lambda_template', np.float),
-            ('error_rate_ont_lambda_complement', np.float),
-            ('error_rate_ont_lambda_2D', np.float),
-            ('longest_match_to_ont_lambda_template', np.int),
-            ('longest_match_to_ont_lambda_complement', np.int),
-            ('longest_match_to_ont_lambda_2D', np.int),
-            ('mean_number_fragments_cs_template', np.float),
-            ('mean_number_fragments_cs_complement', np.float),
-            ('mean_number_fragments_cs_2D', np.float),
-            ('total_length_of_reads_mapped_to_cs_template', np.int),
-            ('total_length_of_reads_mapped_to_cs_complement', np.int),
-            ('total_length_of_reads_mapped_to_cs_2D', np.int),
-            ('mapped_length_of_reads_mapped_to_cs_template', np.int),
-            ('mapped_length_of_reads_mapped_to_cs_complement', np.int),
-            ('mapped_length_of_reads_mapped_to_cs_2D', np.int),
-            ('number_of_mismatches_cs_template', np.int),
-            ('number_of_mismatches_cs_complement', np.int),
-            ('number_of_mismatches_cs_2D', np.int),
-            ('error_rate_cs_template', np.float),
-            ('error_rate_cs_complement', np.float),
-            ('error_rate_cs_2D', np.float),
-            ('longest_match_to_cs_template', np.int),
-            ('longest_match_to_cs_complement', np.int),
-            ('longest_match_to_cs_2D', np.int),
-            ('mean_number_fragments_3D7_V3_template', np.float),
-            ('mean_number_fragments_3D7_V3_complement', np.float),
-            ('mean_number_fragments_3D7_V3_2D', np.float),
-            ('total_length_of_reads_mapped_to_3D7_V3_template', np.int),
-            ('total_length_of_reads_mapped_to_3D7_V3_complement', np.int),
-            ('total_length_of_reads_mapped_to_3D7_V3_2D', np.int),
-            ('mapped_length_of_reads_mapped_to_3D7_V3_template', np.int),
-            ('mapped_length_of_reads_mapped_to_3D7_V3_complement', np.int),
-            ('mapped_length_of_reads_mapped_to_3D7_V3_2D', np.int),
-            ('number_of_mismatches_3D7_V3_template', np.int),
-            ('number_of_mismatches_3D7_V3_complement', np.int),
-            ('number_of_mismatches_3D7_V3_2D', np.int),
-            ('error_rate_3D7_V3_template', np.float),
-            ('error_rate_3D7_V3_complement', np.float),
-            ('error_rate_3D7_V3_2D', np.float),
-            ('longest_match_to_3D7_V3_template', np.int),
-            ('longest_match_to_3D7_V3_complement', np.int),
-            ('longest_match_to_3D7_V3_2D', np.int),
-            ('mean_number_fragments_AgamP3_template', np.float),
-            ('mean_number_fragments_AgamP3_complement', np.float),
-            ('mean_number_fragments_AgamP3_2D', np.float),
-            ('total_length_of_reads_mapped_to_AgamP3_template', np.int),
-            ('total_length_of_reads_mapped_to_AgamP3_complement', np.int),
-            ('total_length_of_reads_mapped_to_AgamP3_2D', np.int),
-            ('mapped_length_of_reads_mapped_to_AgamP3_template', np.int),
-            ('mapped_length_of_reads_mapped_to_AgamP3_complement', np.int),
-            ('mapped_length_of_reads_mapped_to_AgamP3_2D', np.int),
-            ('number_of_mismatches_AgamP3_template', np.int),
-            ('number_of_mismatches_AgamP3_complement', np.int),
-            ('number_of_mismatches_AgamP3_2D', np.int),
-            ('error_rate_AgamP3_template', np.float),
-            ('error_rate_AgamP3_complement', np.float),
-            ('error_rate_AgamP3_2D', np.float),
-            ('longest_match_to_AgamP3_template', np.int),
-            ('longest_match_to_AgamP3_complement', np.int),
-            ('longest_match_to_AgamP3_2D', np.int),
-#             ('mean_proportion_mismatches_3D7_V3_complement', np.float),
-#             ('mean_proportion_mismatches_3D7_V3_2D', np.float),
-        ]
-    )
-    return experiment_summary
-
-summarise_experiment()
 
