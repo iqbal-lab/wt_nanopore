@@ -31,6 +31,7 @@ with open('%s/complement.fq' % opt.outdir, 'w') as complementOutFile, \
             templateOutFile.write(fq.template)
         if fq.twoD is not None:
             twoDOutFile.write(fq.twoD)
+        fq.close()
 
 
 

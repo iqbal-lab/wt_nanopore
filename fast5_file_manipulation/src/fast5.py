@@ -29,7 +29,7 @@ class fast5File(object):
         datasetname = '/Analyses/%s/%s/Fastq' % (analysis_name, basecalled_name)
         try:
             # logging.warning("Found Fasta File in %s : %s" % (self.filepath,datasetname ))
-            fq = hdf[datasetname][()]
+            fq = self.hdf[datasetname][()]
             return fq[:-1] + "\n"
         except KeyError,e:
             # logging.warning("No Fasta File in %s : %s" % (self.filepath,datasetname ))
@@ -61,13 +61,24 @@ class fast5File(object):
         return self.hdf['Analyses']
     @property 
     def has2d(self):
-        return "BaseCalled_2D" in self.hdf['Analyses']['Basecall_2D_000']
+        try:
+            return "BaseCalled_2D" in self.hdf['Analyses']['Basecall_2D_000']
+        except KeyError:
+            return False
     @property 
     def hasComplement(self):
-        return "BaseCalled_complement" in self.hdf['Analyses']['Basecall_2D_000']
+        try:
+            return "BaseCalled_complement" in self.hdf['Analyses']['Basecall_2D_000']
+        except KeyError:
+            return False
+
     @property 
     def hasTemplate(self):
-        return "BaseCalled_template" in self.hdf['Analyses']['Basecall_2D_000']
+        try:
+            return "BaseCalled_template" in self.hdf['Analyses']['Basecall_2D_000']
+        except KeyError:
+            return False
+
     # @property 
     # def HairpinAlign(self):
     #     """"""
