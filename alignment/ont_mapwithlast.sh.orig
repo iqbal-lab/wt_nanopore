@@ -1,0 +1,60 @@
+#!/usr/bin/env sh
+
+if [ $# -lt 3 ] ; then
+    echo "Usage: ont_mapwithlast.py /path/to/reads.fasta /path/to/reference.fasta outdir"
+    echo "       Map the long reads to a reference using the last program."
+    echo
+    exit 1
+fi
+
+reads_fasta=$1
+ref_fasta=$2
+outdir=$3
+
+# Extract useful things from command-line args.
+reads_basename=`basename ${reads_fasta} | sed "s,.fasta,,g"`
+ref_dirname=`dirname ${ref_fasta} | sed "s,.fasta,,g"`
+ref_basename=`basename ${ref_fasta} | sed "s,.fasta,,g"`
+
+# Create the last db index files (if necessary).
+if [ ! -f ${ref_dirname}/${ref_basename}.lastindex.bck ] ; then
+    # echo "Erro: last db files do not exist ${ref_dirname}/${ref_basename}.lastindex.*"
+    # exit 2
+   echo "Cmd : lastdb -Q 0 ${ref_dirname}/${ref_basename}.lastindex ${ref_fasta}"
+         lastdb -Q 0 ${ref_dirname}/${ref_basename}.lastindex ${ref_fasta}
+else
+   echo "Info: ${outdir}/${ref_basename}.lastindex.* files already exist"
+fi
+
+# Align the reads with last (if necessary).
+if [ ! -f ${outdir}/${reads_basename}.last.txt ] ; then
+    echo "Cmd : lastal -s 2 -T 0 -Q 0 -a 1 -m 1 ${ref_dirname}/${ref_basename}.lastindex ${reads_fasta} > ${outdir}/${reads_basename}.last.txt"
+                lastal -s 2 -T 0 -Q 0 -a 1 -m 1 ${ref_dirname}/${ref_basename}.lastindex ${reads_fasta} > ${outdir}/${reads_basename}.last.txt
+else
+    echo "Info: last output already exists " + ${outdir}/${reads_basename}.last.txt
+fi
+
+# Convert output to sorted bam format.
+if [ ! -f ${outdir}/${reads_basename}.last.sam ] ; then
+    echo "Cmd : maf-convert.py sam ${outdir}/${reads_basename}.last.txt > ${outdir}/${reads_basename}.last.sam"
+                maf-convert.py sam ${outdir}/${reads_basename}.last.txt > ${outdir}/${reads_basename}.last.sam
+else
+    echo "Info: mapped reads in sam format already exist " + ${outdir}/${reads_basename}.last.sam
+fi
+if [ ! -f ${outdir}/${reads_basename}.last.sorted.bam ] ; then
+    echo "Cmd : samtools view -T ${ref_fasta} -bS ${outdir}/${reads_basename}.last.sam | samtools sort - ${outdir}/${reads_basename}.last.sorted"
+                samtools view -T ${ref_fasta} -bS ${outdir}/${reads_basename}.last.sam | samtools sort - ${outdir}/${reads_basename}.last.sorted
+else
+    echo "Info: sorted bam file already exists " + ${outdir}/${reads_basename}.last.sorted.bam
+fi
+if [ ! -f ${outdir}/${reads_basename}.last.sorted.bam.bai ] ; then
+    echo "Cmd : samtools index ${outdir}/${reads_basename}.last.sorted.bam"
+                samtools index ${outdir}/${reads_basename}.last.sorted.bam
+
+else
+    echo "Info: sorted bam index file already exists " + ${outdir}/${reads_basename}.last.sorted.bam.bai
+fi
+
+# Print success message
+echo "Finished successfully : $*"
+
