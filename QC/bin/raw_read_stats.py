@@ -52,6 +52,7 @@ def makeOutFileName(fastq):
 ## Define some parameters
 qualbins = range(60)
 
+stats = {"Total2dBases":0}
 header = ["readType","id","length","meanQualScore","sdQualScore","GC"]
 logging.info("Analysing fastq files")
 outfile_name = makeOutFileName(fqFilelist[0])
@@ -62,15 +63,17 @@ with open(outfile_name,'w') as outfile:
 		readType= fastq.split("/")[-1].split(".fq")[0]
 		## Storing values for histograms
 		runningQualityScoreHist = [0]*len(qualbins)		
-		# logging.info("%s " % outfile_name.split('/')[-1])
 		## Write stats to file
+		print fastq
 		for record in SeqIO.parse(fastq, "fastq-sanger"):
+			if readType == "2d":
+				stats["Total2dBases"] += len(record.seq)
 			qualityScores = record.letter_annotations["phred_quality"]
 			row = [readType,record.id,len(record.seq),np.mean(qualityScores),np.std(qualityScores),GC(record.seq)]
 			hist,bin_edges=np.histogram(qualityScores,bins=qualbins)
 			runningQualityScoreHist = [i+j for i,j in zip(hist,runningQualityScoreHist)]
 			writer.writerow(row)
-
+print stats
 for fast5 in fast5Filelist:
 	f5 =  fast5File(filepath=f)
 	
