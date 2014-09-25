@@ -19,12 +19,18 @@ parser.add_option("-o", "--out", dest="outfilepath",
 if opt.directory is None:
     parser.print_help()
 
-def printStats(stats):
-	print "%i of fast5 files with template reads" % stats.get('templateReads',0)
-	print "%i of fast5 files with complement reads" % stats.get('complementReads',0)
-	print "%i of fast5 files with 2d reads" % stats.get('2dReads',0)
-	print "%i of fast5 files without fq read" % stats.get('noFq',0)
-	print "%i fast5 files" % stats.get('total',0)
+def printStats(stats,last=False):
+	template_out = "%i template " % stats.get('templateReads',0) 
+	complement_out = "%i complement" % stats.get('complementReads',0) 
+	twod_out = "%i 2d reads out of " % stats.get('2dReads',0) 
+	# noFq_out = "%i of fast5 files without fq read\r" % stats.get('noFq',0) 
+	total_out = "%i fast5 files\r" % stats.get('total',0) 
+	if not last:
+		sys.stdout.write(" ".join([template_out,complement_out,twod_out,total_out]))
+		sys.stdout.flush()
+	else:
+		sys.stdout.write("\n".join(["\n"+template_out,complement_out,twod_out,total_out+'\n']))
+	
 	# print "%i of fast5 files with complement reads without template reads" % stats.get('complementReadsWithoutTemplate',0)
 
 directory = opt.directory + "/*.fast5"
@@ -59,6 +65,6 @@ for f in fast5list:
     printStats(stats)
 if opt.outfilepath:
 	outfile.close()
-printStats(stats)	
+printStats(stats,last=True)	
 	    
 
