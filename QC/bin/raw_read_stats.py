@@ -9,9 +9,16 @@ import glob
 import logging
 import csv
 from Bio import SeqIO
-from Bio.SeqUtils import GC
+# from Bio.SeqUtils import GC
 import numpy as np
 import operator
+def GC(seq):
+	"""Calcultes GC/ATCG content in a sequence"""
+	A = seq.count('A')
+	T = seq.count('T')
+	C = seq.count('C')
+	G = seq.count('G')
+	return float(C+G) / float(A+T+G+C)
 
 ## Takes a directory of basecalled ONT fast5 files or fastafiles and returns some basic stats 
 ## on the number of bases, reads, quality scores etc. 
