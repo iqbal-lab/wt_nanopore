@@ -27,18 +27,20 @@ parser.description = """
 Calculates some basic stats on ONT fastq reads"""
 parser.add_option("-d", "--dir", dest="directory",
                   help="path to directory containing fast5 or fastq files")
-# parser.add_option("-o", "--out", dest="outdir",
-#                   help="path to output directory",default="./")
+parser.add_option("-o", "--out", dest="outfile_name",
+                  help="path to output",default="./")
 (opt, args) = parser.parse_args()
 if opt.directory is None:
     parser.print_help()
     sys.exit()
 
 ### Get all the files in the directory 
-fqFilelist = glob.glob(opt.directory+"/*.fq")
+fqFilelist = glob.glob(opt.directory+"/*.fq") + glob.glob(opt.directory+"/*.fastq")
 fast5Filelist = glob.glob(opt.directory+"/*.fast5") 
 if fast5Filelist:
 	logging.error("Haven't written fast5 handler code yet...")
+
+
 ## Make the output directories
 def makeDir(directory):
     if not os.path.exists(directory):
@@ -55,12 +57,16 @@ qualbins = range(60)
 stats = {"Total2dBases":0}
 header = ["readType","id","length","meanQualScore","sdQualScore","GC"]
 logging.info("Analysing fastq files")
-outfile_name = makeOutFileName(fqFilelist[0])
+# outfile_name = makeOutFileName(fqFilelist[0])
+outfile_name = opt.outfile_name
+print outfile_name
 with open(outfile_name,'w') as outfile:
 	writer = csv.writer(outfile,delimiter="\t")
 	writer.writerow(header)
 	for fastq in fqFilelist:
-		readType= fastq.split("/")[-1].split(".fq")[0]
+
+		read_type = get_readfastq.split("/")[-1].split(".fq")[0]
+		print readType
 		## Storing values for histograms
 		runningQualityScoreHist = [0]*len(qualbins)		
 		## Write stats to file
